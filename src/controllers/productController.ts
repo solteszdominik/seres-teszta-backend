@@ -1,53 +1,79 @@
-import { productService } from "../services/productService";
-import type {
-  CreateProductRequest,
-  IdParams,
-  SlugParams,
-  UpdateProductRequest,
-} from "../types/api";
-import { asyncHandler } from "../utils/asyncHandler";
+import { Request, Response } from "express";
+import { productRepository } from "../repositories/productRepository";
+import {
+  createProductSchema,
+  updateProductSchema,
+} from "../schemas/productSchema";
 
-export const productController = {
-  getAllProducts: asyncHandler(async (_req, res) => {
-    const products = await productService.getProducts();
+export const getProducts = async (_req: Request, res: Response) => {
+  const { data, error } = await productRepository.findAll();
 
-    res.json(products);
-  }),
+  if (error) {
+    return res.status(500).json({
+      message: "A termékek lekérése sikertelen.",
+      error: error.message,
+    });
+  }
 
-  getProductBySlug: asyncHandler<SlugParams>(async (req, res) => {
-    const product = await productService.getProductBySlug(req.params.slug);
+  return res.status(200).json(data);
+};
 
-    res.json(product);
-  }),
+export const getProductBySlug = async (req: Request, res: Response) => {
+  const slug = req.params.slug as string;
 
-  getProductById: asyncHandler<IdParams>(async (req, res) => {
-    const product = await productService.getProductById(req.params.id);
+  const { data, error } = await productRepository.findBySlug(slug);
 
-    res.json(product);
-  }),
+  if (error || !data) {
+    return res.status(404).json({
+      message: "A termék nem található.",
+    });
+  }
 
-  createProduct: asyncHandler<{}, unknown, CreateProductRequest>(
-    async (req, res) => {
-      const product = await productService.createProduct(req.body);
+  return res.status(200).json(data);
+};
 
-      res.status(201).json({
-        message: "Product created successfully",
-        data: product,
-      });
-    },
-  ),
+export const createProduct = async (req: Request, res: Response) => {
+  const parsed = createProductSchema.safeParse(req.body);
 
-  updateProduct: asyncHandler<IdParams, unknown, UpdateProductRequest>(
-    async (req, res) => {
-      const product = await productService.updateProduct(
-        req.params.id,
-        req.body,
-      );
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Hibás termékadatok.",
+      errors: parsed.error.flatten(),
+    });
+  }
 
-      res.json({
-        message: "Product updated successfully",
-        data: product,
-      });
-    },
-  ),
+  const { data, error } = await productRepository.create(parsed.data);
+
+  if (error) {
+    return res.status(500).json({
+      message: "A termék létrehozása sikertelen.",
+      error: error.message,
+    });
+  }
+
+  return res.status(201).json(data);
+};
+
+export const updateProduct = async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+
+  const parsed = updateProductSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Hibás termékadatok.",
+      errors: parsed.error.flatten(),
+    });
+  }
+
+  const { data, error } = await productRepository.updateById(id, parsed.data);
+
+  if (error || !data) {
+    return res.status(404).json({
+      message: "A termék nem található vagy nem módosítható.",
+      error: error?.message,
+    });
+  }
+
+  return res.status(200).json(data);
 };
