@@ -8,7 +8,6 @@ const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 interface OrderEmailItem {
   product_name: string;
-  unit: string;
   unit_price: number;
   quantity: number;
 }
@@ -60,7 +59,7 @@ const createItemsHtml = (items: OrderEmailItem[]) => {
           </td>
 
           <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-            ${item.quantity} ${escapeHtml(item.unit)}
+            ${item.quantity} db
           </td>
 
           <td style="padding: 8px; border-bottom: 1px solid #ddd;">
@@ -86,6 +85,7 @@ export const emailService = {
       from: emailFrom!,
       to: data.customer_email,
       subject: `Rendelés visszaigazolása – ${data.order_number}`,
+
       html: `
         <h2>Köszönjük a rendelését!</h2>
 
@@ -150,7 +150,7 @@ export const emailService = {
 
         <p>
           Üdvözlettel,<br />
-          Zentó-Piért
+          Seres Tészta
         </p>
       `,
     });
@@ -166,6 +166,7 @@ export const emailService = {
       from: emailFrom!,
       to: adminEmail!,
       subject: `Új rendelés – ${data.order_number}`,
+
       html: `
         <h2>Új rendelés érkezett</h2>
 

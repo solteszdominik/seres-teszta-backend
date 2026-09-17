@@ -1,5 +1,4 @@
 import { env } from "../config/env";
-import { shippingMethods } from "../config/shipping";
 import { orderRepository } from "../repositories/orderRepository";
 import { productRepository } from "../repositories/productRepository";
 import type { CreateOrderInput, OrderStatus } from "../types/order";
@@ -19,21 +18,9 @@ export const orderService = {
       throw new AppError("Missing customer data", 400);
     }
 
-    if (!input.terms_accepted) {
-      throw new AppError("Terms must be accepted", 400);
-    }
-
     if (!input.items || input.items.length === 0) {
       throw new AppError("Order must contain at least one item", 400);
     }
-
-    const shippingMethod = shippingMethods[input.shipping_method];
-
-    if (!shippingMethod) {
-      throw new AppError("Invalid shipping method", 400);
-    }
-
-    const shippingPrice = shippingMethod.price;
 
     const verifiedItems = await Promise.all(
       input.items.map(async (item) => {
@@ -53,24 +40,23 @@ export const orderService = {
           product_id: product.id,
           product_name: product.name,
           unit_price: Number(product.price),
-          unit: product.unit,
           quantity: item.quantity,
         };
       }),
     );
 
-    const productsTotal = verifiedItems.reduce(
+    const totalAmount = verifiedItems.reduce(
       (total, item) => total + item.unit_price * item.quantity,
       0,
     );
 
-    const totalPrice = productsTotal + shippingPrice;
+    const orderNumber = `SERES-${Date.now().toString().slice(-8)}`;
 
     const { data: order, error } = await orderRepository.createOrderWithItems(
       input,
       verifiedItems,
-      totalPrice,
-      shippingPrice,
+      totalAmount,
+      orderNumber,
     );
 
     if (error || !order) {

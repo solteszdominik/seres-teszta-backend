@@ -1,11 +1,9 @@
 import { supabase } from "../config/supabase";
-import type { CreateOrderInput } from "../types/order";
+import type { CreateOrderInput, OrderStatus } from "../types/order";
 
 interface VerifiedOrderItem {
   product_id: string;
-  product_name: string;
   unit_price: number;
-  unit: string;
   quantity: number;
 }
 
@@ -13,28 +11,63 @@ export const orderRepository = {
   async createOrderWithItems(
     order: CreateOrderInput,
     items: VerifiedOrderItem[],
-    totalPrice: number,
-    shippingPrice: number,
+    totalAmount: number,
+    orderNumber: string,
   ) {
-    return supabase.rpc("create_order_with_items", {
-      p_customer_name: order.customer_name,
-      p_customer_email: order.customer_email,
-      p_customer_phone: order.customer_phone,
+    const { data: createdOrder, error: orderError } = await supabase
+      .from("orders")
+      .insert({
+        order_number: orderNumber,
+        customer_name: order.customer_name,
+        customer_email: order.customer_email,
+        customer_phone: order.customer_phone,
+        company_name: order.company_name ?? null,
+        postal_code: order.postal_code,
+        city: order.city,
+        street_address: order.street_address,
+        message: order.message ?? null,
+        status: "new",
+        total_amount: totalAmount,
+      })
+      .select("*")
+      .single();
 
-      p_postal_code: order.postal_code,
-      p_city: order.city,
-      p_street_address: order.street_address,
+    if (orderError || !createdOrder) {
+      return {
+        data: null,
+        error: orderError ?? new Error("A rendelés létrehozása sikertelen."),
+      };
+    }
 
-      p_company_name: order.company_name ?? "",
-      p_message: order.message ?? null,
+    const orderItems = items.map((item) => ({
+      order_id: createdOrder.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+    }));
 
-      p_shipping_method: order.shipping_method,
-      p_shipping_price: shippingPrice,
-      p_terms_accepted: order.terms_accepted,
+    const { data: createdItems, error: itemsError } = await supabase
+      .from("order_items")
+      .insert(orderItems)
+      .select("*");
 
-      p_items: items,
-      p_total_price: totalPrice,
-    });
+    if (itemsError) {
+      // Ne maradjon félkész rendelés, ha az order_items mentése elbukik.
+      await supabase.from("orders").delete().eq("id", createdOrder.id);
+
+      return {
+        data: null,
+        error: itemsError,
+      };
+    }
+
+    return {
+      data: {
+        ...createdOrder,
+        order_items: createdItems,
+      },
+      error: null,
+    };
   },
 
   async findAll() {
@@ -46,9 +79,7 @@ export const orderRepository = {
         order_items (
           id,
           product_id,
-          product_name,
           unit_price,
-          unit,
           quantity
         )
       `,
@@ -65,9 +96,7 @@ export const orderRepository = {
         order_items (
           id,
           product_id,
-          product_name,
           unit_price,
-          unit,
           quantity
         )
       `,
@@ -76,7 +105,7 @@ export const orderRepository = {
       .single();
   },
 
-  async updateStatus(id: string, status: string) {
+  async updateStatus(id: string, status: OrderStatus) {
     return supabase
       .from("orders")
       .update({ status })

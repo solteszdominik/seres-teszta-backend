@@ -10,36 +10,7 @@ export interface SlugParams extends ParamsDictionary {
 }
 
 export type CreateOrderRequest = CreateOrderInput;
+
 export interface UpdateOrderStatusRequest {
   status: OrderStatus;
-}
-
-export interface UpdateProductRequest {
-  name?: string;
-  slug?: string;
-  description?: string | null;
-  price?: number;
-  unit?: "db" | "csomag" | "lap";
-  image_url?: string | null;
-  is_available?: boolean;
-  is_featured?: boolean;
-  category_id?: string;
-  brand?: string | null;
-  product_line?: string | null;
-  package_size?: string | null;
-}
-
-export interface CreateProductRequest {
-  name: string;
-  slug: string;
-  description?: string | null;
-  price: number;
-  unit: "db" | "csomag" | "lap";
-  image_url?: string | null;
-  is_available: boolean;
-  is_featured: boolean;
-  category_id: string;
-  brand?: string | null;
-  product_line?: string | null;
-  package_size?: string | null;
 }

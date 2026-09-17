@@ -4,40 +4,38 @@ export const createOrderSchema = z.object({
   body: z.object({
     customer_name: z
       .string()
-      .min(2, "Customer name must be at least 2 characters"),
+      .trim()
+      .min(2, "A névnek legalább 2 karakterből kell állnia."),
 
-    customer_email: z.string().email("Invalid email address"),
+    customer_email: z.string().trim().email("Érvénytelen e-mail cím."),
 
-    customer_phone: z.string().min(7, "Invalid phone number"),
+    customer_phone: z.string().trim().min(7, "Érvénytelen telefonszám."),
 
-    postal_code: z.string().min(4, "Postal code is required"),
+    company_name: z.string().trim().max(200, "A cégnév túl hosszú.").optional(),
 
-    city: z.string().min(2, "City is required"),
+    postal_code: z
+      .string()
+      .trim()
+      .regex(/^\d{4}$/, "Az irányítószámnak 4 számjegyből kell állnia."),
 
-    street_address: z.string().min(5, "Street address is required"),
+    city: z.string().trim().min(2, "A település megadása kötelező."),
 
-    company_name: z.string().max(200, "Company name is too long").optional(),
+    street_address: z.string().trim().min(5, "A cím megadása kötelező."),
 
-    message: z.string().max(1000, "Message is too long").optional(),
-
-    shipping_method: z.string().min(1, "Shipping method is required"),
-
-    terms_accepted: z.literal(true, {
-      message: "Terms must be accepted",
-    }),
+    message: z.string().trim().max(1000, "Az üzenet túl hosszú.").optional(),
 
     items: z
       .array(
         z.object({
-          product_id: z.string().uuid("Invalid product ID"),
+          product_id: z.string().uuid("Érvénytelen termékazonosító."),
 
           quantity: z
             .number()
             .int()
-            .positive("Quantity must be greater than 0"),
+            .positive("A mennyiségnek legalább 1-nek kell lennie."),
         }),
       )
-      .min(1, "Order must contain at least one item"),
+      .min(1, "A rendelésnek legalább egy terméket tartalmaznia kell."),
   }),
 });
 
