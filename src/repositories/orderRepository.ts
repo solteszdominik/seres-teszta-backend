@@ -1,5 +1,9 @@
 import { supabase } from "../config/supabase";
-import type { CreateOrderInput, OrderStatus } from "../types/order";
+import type {
+  CreatedOrder,
+  CreateOrderInput,
+  OrderStatus,
+} from "../types/order";
 
 interface VerifiedOrderItem {
   product_id: string;
@@ -14,58 +18,29 @@ export const orderRepository = {
     totalAmount: number,
     orderNumber: string,
   ) {
-    const { data: createdOrder, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        order_number: orderNumber,
-        customer_name: order.customer_name,
-        customer_email: order.customer_email,
-        customer_phone: order.customer_phone,
-        company_name: order.company_name ?? null,
-        postal_code: order.postal_code,
-        city: order.city,
-        street_address: order.street_address,
-        message: order.message ?? null,
-        status: "new",
-        total_amount: totalAmount,
-      })
-      .select("*")
-      .single();
+    const { data, error } = await supabase.rpc("create_order_with_items", {
+      p_order_number: orderNumber,
+      p_customer_name: order.customer_name,
+      p_customer_email: order.customer_email,
+      p_customer_phone: order.customer_phone,
+      p_company_name: order.company_name ?? null,
+      p_postal_code: order.postal_code,
+      p_city: order.city,
+      p_street_address: order.street_address,
+      p_message: order.message ?? null,
+      p_total_amount: totalAmount,
+      p_items: items,
+    });
 
-    if (orderError || !createdOrder) {
+    if (error || !data) {
       return {
         data: null,
-        error: orderError ?? new Error("A rendelés létrehozása sikertelen."),
-      };
-    }
-
-    const orderItems = items.map((item) => ({
-      order_id: createdOrder.id,
-      product_id: item.product_id,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-    }));
-
-    const { data: createdItems, error: itemsError } = await supabase
-      .from("order_items")
-      .insert(orderItems)
-      .select("*");
-
-    if (itemsError) {
-      // Ne maradjon félkész rendelés, ha az order_items mentése elbukik.
-      await supabase.from("orders").delete().eq("id", createdOrder.id);
-
-      return {
-        data: null,
-        error: itemsError,
+        error: error ?? new Error("A rendelés létrehozása sikertelen."),
       };
     }
 
     return {
-      data: {
-        ...createdOrder,
-        order_items: createdItems,
-      },
+      data: data as CreatedOrder,
       error: null,
     };
   },

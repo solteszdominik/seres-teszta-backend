@@ -3,7 +3,6 @@ import cors from "cors";
 import helmet from "helmet";
 import { env } from "./config/env";
 
-import categoryRoutes from "./routes/categoryRoutes";
 import productRoutes from "./routes/productRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import { errorHandler } from "./middleware/errorHandler";
@@ -50,7 +49,6 @@ app.get("/health", (_req, res) => {
   });
 });
 
-app.use("/categories", categoryRoutes);
 app.use("/products", productRoutes);
 app.use("/orders", orderRoutes);
 

@@ -42,3 +42,14 @@ export interface Order {
 
   created_at: string;
 }
+
+export interface OrderItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+}
+
+export interface CreatedOrder extends Order {
+  order_items: OrderItem[];
+}

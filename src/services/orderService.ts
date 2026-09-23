@@ -88,7 +88,19 @@ export const orderService = {
     }
 
     return {
-      order,
+      order: {
+        ...order,
+        order_items: order.order_items.map((item) => {
+          const verifiedItem = verifiedItems.find(
+            (verified) => verified.product_id === item.product_id,
+          );
+
+          return {
+            ...item,
+            product_name: verifiedItem?.product_name ?? "Ismeretlen termék",
+          };
+        }),
+      },
     };
   },
 

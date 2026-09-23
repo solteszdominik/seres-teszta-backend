@@ -1,5 +1,8 @@
 import { productRepository } from "../repositories/productRepository";
-import type { UpdateProductInput } from "../repositories/productRepository";
+import {
+  CreateProductInput,
+  UpdateProductInput,
+} from "../schemas/productSchema";
 import { AppError } from "../utils/AppError";
 
 export const productService = {
@@ -47,7 +50,7 @@ export const productService = {
     return data;
   },
 
-  async createProduct(input: UpdateProductInput) {
+  async createProduct(input: CreateProductInput) {
     const { data, error } = await productRepository.create(input);
 
     if (error || !data) {

@@ -13,6 +13,7 @@ const envSchema = z
     SUPABASE_URL: z.string().url(),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 
+    ORDERS_ENABLED: z.enum(["true", "false"]).default("false"),
     EMAIL_ENABLED: z.enum(["true", "false"]).default("false"),
 
     RESEND_API_KEY: z.string().optional(),
